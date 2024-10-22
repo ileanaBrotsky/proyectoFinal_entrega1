@@ -1,63 +1,88 @@
 import { Router } from 'express'
-import {uploader} from '../utils.js'
-import ProductManager from "../../productsManager.js";
+import {uploader,procesaErrores} from '../utils.js'
+import ProductsManager from "../dao/productsManager.js";
 
 const router = Router()
+const ProductM = new ProductsManager("products.json");
 
-const Products1 = new ProductManager("products.json");
-
-router.get("/", async (req, resp) => {
+router.get("/", async (req, res) => {
   try {
-    const products = await Products1.getProducts();
+    const products = await ProductM.getProducts();
     let limit = parseInt(req.query.limit);
     if (limit && limit <= products.length) {
       products.length=limit
     }
-      resp.status(200).send(products);
+    res.setHeader('Content-Type','application/json');
+    return  res.status(200).send(products);
    
   } catch (error) {
-     console.log("hubo un error: ", error);
+    procesaErrores(res,error)
   }
 });
 
 
 
-router.get("/:pid", async (req, resp) => {
+router.get("/:pid", async (req, res) => {
+  let {pid}=req.params
+  pid=Number(pid) 
+  if(isNaN(pid)){
+      res.setHeader('Content-Type','application/json');
+      return res.status(400).json({error:`El id debe ser numérico`})
+  }
   try {
-    resp.status(200).send(await Products1.getProductById(parseInt(req.params.pid)));
+    console.log('entra')
+    let product=await ProductM.getProductById(pid)
+    if(!product){
+        res.setHeader('Content-Type','application/json');
+        return res.status(404).json({error:`No existe producto con id ${pid}`})
+    }
+    res.setHeader('Content-Type','application/json');
+    return res.status(200).json({product});
   } catch (error) {
-    console.log("hubo un error: ", error);
+   procesaErrores(res,error)
   }
 });
 
-router.post('/', uploader.single('file'), async (req, resp) => {
+router.post('/', uploader.single('file'), async (req, res) => {
   if (!req.file) {
-    return resp.status(400).send({ status: "error", error: "No se encontró el archivo" });
+    return res.status(400).send({ status: "error", error: "No se encontró el archivo" });
   }
 try{
   let {title, description, code, price, stock, category}=req.body
   let thumbnail= [req.file.path];
   let status=true
-  resp.status(200).send( await Products1.addProduct(title, description,parseInt( price), thumbnail, status, code,  parseInt(stock),category))
+  res.status(200).send( await ProductM.addProduct(title, description,parseInt( price), thumbnail, status, code,  parseInt(stock),category))
   console.log(req.file)
 }   catch (error) {
-    console.log("hubo un error: ", error);
+   procesaErrores(res,error)
   }
 });
 
-router.put("/:pid", async (req, resp) => {
+router.put("/:pid", async (req, res) => {
+  let {pid}=req.params
+  pid=Number(pid) 
+  if(isNaN(pid)){
+      res.setHeader('Content-Type','application/json');
+      return res.status(400).json({error:`El id debe ser numérico`})
+  }
   try {
-    let {entry, value}= req.body
-    resp.status(200).send(await Products1.updateProduct(parseInt(req.params.pid), entry, value));
+    let product=await ProductM.getProductById(pid)
+    if(!product){
+        res.setHeader('Content-Type','application/json');
+        return res.status(404).json({error:`No existe producto con id ${pid}`})
+    }
+    let {entry, value}= req.body;
+    res.setHeader('Content-Type','application/json');
+    return res.status(200).send(await ProductM.updateProduct(pid, entry, value));
   } catch (error) {
-    console.log("hubo un error: ", error);
+   procesaErrores(res,error)
   }
 });
-router.delete("/:pid", async (req, resp) => {
+router.delete("/:pid", async (req, res) => {
   try {
-    resp.status(200).send(await Products1.deleteProduct(parseInt(req.params.pid)));
+    res.status(200).send(await ProductM.deleteProduct(parseInt(req.params.pid)));
   } catch (error) {
-    console.log("hubo un error: ", error);
+   procesaErrores(res,error)
   }
 });
 export default router

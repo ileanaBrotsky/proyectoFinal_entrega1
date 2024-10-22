@@ -1,47 +1,48 @@
 import { Router } from 'express'
-import CartManager from "../../cartsManager.js";
-import ProductManager from "../../productsManager.js";
+import CartManager from "../dao/cartsManager.js";
+import ProductsManager from "../dao/productsManager.js";
+import { procesaErrores } from '../utils.js';
 const router = Router()
 
 const Carts1 = new CartManager("carts.json");
-const Products1 = new ProductManager("products.json");
+const ProductM = new ProductsManager("products.json");
 
-router.post('/', async (req, resp) => {
+router.post('/', async (req, res) => {
     try{
-      resp.status(200).send( await Carts1.addCart())
+      res.status(200).send( await Carts1.addCart())
     }   catch (error) {
-        console.log("hubo un error: ", error);
+      procesaErrores(res,error)
       }
     });
 
-router.get("/:cid", async (req, resp) => {
+router.get("/:cid", async (req, res) => {
   try {
-    resp.status(200).send(await Carts1.getCartById(parseInt(req.params.cid)));
+    res.status(200).send(await Carts1.getCartById(parseInt(req.params.cid)));
   } catch (error) {
-    console.log("hubo un error: ", error);
+  procesaErrores(res,error)
   }
 });
 
-router.post('/:cid/product/:pid', async (req, resp) => {
+router.post('/:cid/product/:pid', async (req, res) => {
     try{
-       resp.status(200).send(await Carts1.updateCart(parseInt(req.params.pid),parseInt(req.params.cid)))
+       res.status(200).send(await Carts1.updateCart(parseInt(req.params.pid),parseInt(req.params.cid)))
     }   catch (error) {
-        console.log("hubo un error: ", error);
+      procesaErrores(res,error)
       }
     });
     
 
 
-router.get("/", async (req, resp) => {
+router.get("/", async (req, res) => {
   try {
     const carts = await Carts1.getCarts();
     let limit = parseInt(req.query.limit);
     if (limit && limit <= carts.length) {
       carts.length=limit
     }
-      resp.status(200).send(carts);
+      res.status(200).send(carts);
   } catch (error) {
-     console.log("hubo un error: ", error);
+   procesaErrores(res,error)
   }
 });
 

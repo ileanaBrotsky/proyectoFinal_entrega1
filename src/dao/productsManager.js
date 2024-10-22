@@ -1,8 +1,8 @@
 import fs from "fs";
-export default class ProductManager {
+export default class ProductsManager {
   constructor(file) {
     this.file = file;
-    this.path = "./dataBase-docs";
+    this.path = "./src/data";
   }
   getNextID = async () => {
     const products = await this.getProducts();
@@ -64,6 +64,7 @@ export default class ProductManager {
 
   getProducts = async () => {
     try {
+      console.log( this.path + "/" + this.file,)
       const content = await fs.promises.readFile(
         this.path + "/" + this.file,
         "utf-8"
@@ -77,6 +78,7 @@ export default class ProductManager {
   getProductById = async (idProd) => {
     try {
       const products = await this.getProducts();
+      console.log('los productos son',products)
       let prod = products.find((element) => element.id === idProd);
       return prod ? prod : `No se encontro el producto por el id ${idProd}`;
     } catch (error) {
