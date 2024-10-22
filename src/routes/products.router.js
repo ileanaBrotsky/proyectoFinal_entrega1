@@ -44,12 +44,12 @@ router.get("/:pid", async (req, res) => {
 });
 
 router.post('/', uploader.single('file'), async (req, res) => {
-  if (!req.file) {
-    return res.status(400).send({ status: "error", error: "No se encontró el archivo" });
-  }
+  // if (!req.file) {
+  //   return res.status(400).send({ status: "error", error: "No se encontró el archivo" });
+  // }
 try{
   let {title, description, code, price, stock, category}=req.body
-  let thumbnail= [req.file.path];
+  let thumbnail= [req.file.path?req.file.path:''];
   let status=true
   res.status(200).send( await ProductM.addProduct(title, description,parseInt( price), thumbnail, status, code,  parseInt(stock),category))
   console.log(req.file)
