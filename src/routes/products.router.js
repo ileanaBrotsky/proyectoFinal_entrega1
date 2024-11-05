@@ -5,22 +5,6 @@ import ProductsManager from "../dao/productsManager.js";
 const router = Router()
 const ProductM = new ProductsManager("products.json");
 
-router.get("/", async (req, res) => {
-  try {
-    const products = await ProductM.getProducts();
-    let limit = parseInt(req.query.limit);
-    if (limit && limit <= products.length) {
-      products.length=limit
-    }
-    res.setHeader('Content-Type','application/json');
-    return  res.status(200).send(products);
-   
-  } catch (error) {
-    procesaErrores(res,error)
-  }
-});
-
-
 
 router.get("/:pid", async (req, res) => {
   let {pid}=req.params
