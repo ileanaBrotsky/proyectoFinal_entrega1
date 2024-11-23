@@ -1,72 +1,58 @@
 import { Router } from 'express'
-import {uploader,procesaErrores} from '../utils.js'
-import ProductsManager from "../dao/productsManager.js";
-
+import { ProductModel } from "../dao/models/productModel.js";
 const router = Router()
-const ProductM = new ProductsManager("products.json");
 
+//Accion agregar producto nuevo
+router.post("/create", async (req, res) => {
+  const productNew = req.body;
+  const productGenerated = new ProductModel(productNew);
+  try {
+    let result= await productGenerated.save();
+    console.log({ productGenerated });
+    res.send({ status: "sucess", payload: result }).redirect("/home");
+  } catch (error) {
+    console.log("cannot create products", error);
+  }
+});
 
-router.get("/:pid", async (req, res) => {
-  let {pid}=req.params
-  pid=Number(pid) 
-  if(isNaN(pid)){
-      res.setHeader('Content-Type','application/json');
-      return res.status(400).json({error:`El id debe ser numérico`})
+//Accion modificar un producto existente
+router.post("/update/:code", async (req, res) => {
+  const code = req.params.code;
+  console.log("el body que llega", req.body)
+  console.log("el codigo", code)
+  req.body.img= [req.body.img]
+  let productToUpdate = req.body;
+  console.log("el producto modificado", productToUpdate)
+  if (
+    !productToUpdate.code ||
+    !productToUpdate.description ||
+    !productToUpdate.price ||
+    !productToUpdate.category ||
+    !productToUpdate.stock
+  ) {
+    return res.send({ status: "error", error: "Valores incompletos" });
   }
   try {
-    console.log('entra')
-    let product=await ProductM.getProductById(pid)
-    if(!product){
-        res.setHeader('Content-Type','application/json');
-        return res.status(404).json({error:`No existe producto con id ${pid}`})
-    }
-    res.setHeader('Content-Type','application/json');
-    return res.status(200).json({product});
-  } catch (error) {
-   procesaErrores(res,error)
+  await ProductModel.updateOne({ code: code }, productToUpdate);
+ // console.log(" modificado", productToUpdate)
+  res.send({status: 200}).redirect("/edit_products");
+  }
+  catch(error){
+    console.log("cannot update products", error);
   }
 });
 
-router.post('/', uploader.single('file'), async (req, res) => {
-  // if (!req.file) {
-  //   return res.status(400).send({ status: "error", error: "No se encontró el archivo" });
-  // }
-try{
-  let {title, description, code, price, stock, category}=req.body
-  let thumbnail= [req.file.path?req.file.path:''];
-  let status=true
-  res.status(200).send( await ProductM.addProduct(title, description,parseInt( price), thumbnail, status, code,  parseInt(stock),category))
-  console.log(req.file)
-}   catch (error) {
-   procesaErrores(res,error)
+
+// Accion eliminar un producto existente
+router.delete("/delete/:code", async (req, res) => {
+  const code = req.params.code;
+  try {
+  await ProductModel.deleteOne({ code: code });
+  res.send({status: 200}).redirect("/products");
+  }
+  catch(error){
+    console.log("cannot delete product", error);
   }
 });
 
-router.put("/:pid", async (req, res) => {
-  let {pid}=req.params
-  pid=Number(pid) 
-  if(isNaN(pid)){
-      res.setHeader('Content-Type','application/json');
-      return res.status(400).json({error:`El id debe ser numérico`})
-  }
-  try {
-    let product=await ProductM.getProductById(pid)
-    if(!product){
-        res.setHeader('Content-Type','application/json');
-        return res.status(404).json({error:`No existe producto con id ${pid}`})
-    }
-    let {entry, value}= req.body;
-    res.setHeader('Content-Type','application/json');
-    return res.status(200).send(await ProductM.updateProduct(pid, entry, value));
-  } catch (error) {
-   procesaErrores(res,error)
-  }
-});
-router.delete("/:pid", async (req, res) => {
-  try {
-    res.status(200).send(await ProductM.deleteProduct(parseInt(req.params.pid)));
-  } catch (error) {
-   procesaErrores(res,error)
-  }
-});
 export default router
