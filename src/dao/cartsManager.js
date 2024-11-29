@@ -47,11 +47,11 @@ export default class CartManager {
     }
   };
 
-  getCartById = async (idCart) => {
+  getCartBy = async (filter) => {
     try {
       const carts = await this.getCarts();
-      let cart = carts.find((element) => element.id === idCart);
-      return cart ? cart : `No se encontro el producto por el id ${idCart}`;
+      let cart = carts.find((element) => element.id === filter);
+      return cart ? cart : `No se encontro el producto por el id ${filter}`;
     } catch (error) {
       console.log("hubo un error: ", error);
     }

@@ -2,14 +2,17 @@ import express from "express";
 import handlebars from "express-handlebars"
 import productsRouter from './routes/products.router.js'
 import cartsRouter from './routes/carts.router.js'
+import { config } from "./config/config.js";
+import { conectarDB } from "./connDB.js";
 import __dirname from './utils.js'
 import viewsRouter from "./routes/views.router.js"
 import { Server } from "socket.io";
-import ProductsManager from "./dao/productsManager.js";
+import {ProductsMongooseManager as ProductsManager }from './dao/productsMongooseManager.js';
+import { MessagesMongooseManager } from './dao/messagesMongooseManager.js';
 import mongoose from "mongoose";
-const PORT=8080
+const PORT=config.PORT
 const app = express();
-const ProductM = new ProductsManager("products.json");
+
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -23,37 +26,47 @@ app.use('/',viewsRouter);
 
 // Motores de plantilla
 app.engine('handlebars',handlebars.engine());
-app.set('views',__dirname + '/views');
 app.set('view engine','handlebars');
+app.set('views',__dirname + '/views');
 
 mongoose.set('strictQuery', false);
-const url= "mongodb+srv://ileanabrotsky:CoderCoder@cluster0.0rc0s.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
-
 const httpServer= app.listen(PORT, () => console.log(`Running in port ${PORT}...`));
-const enviroment= async()=>{
-    try{
-        await mongoose.connect(url,{dbName:"ecommerce"}) 
-        console.log('DB Connected...')
+conectarDB(config.MONGO_URL,config.DB_NAME)
+       
+const io= new Server(httpServer);
+io.on('connection', socket=>{
+    console.log("Nuevo cliente socket conectando")
+    socket.on('new',async(user)=>{
+        console.log(`${user} se acaba de conectar`);
+        try {
+          let  messages = await MessagesMongooseManager.getMessages();
+           
+            io.emit('messagesLogs', messages)
+          } catch (error) {
+            console.log("cannot get chats with mongoose", error);
+          }
+})
+  socket.on('message', async(data)=>{
+    
+    const messageGenerated = await MessagesMongooseManager.addMessage(data);
+      try {
+      let  messages = await MessagesMongooseManager.getMessages();
+           
+        io.emit('messagesLogs', messages)
+      } catch (error) {
+        console.log("cannot create message", error);
+      }
+  })
+socket.on('addNewProduct', async data =>{
+    console.log("el producto es",data);
+    let {title, description, thumbnail, code, price, stock, category}= data;
+    try {
+    await ProductsManager.addProduct(title, description,parseInt( price), thumbnail,  code,  parseInt(stock),category)
+    .then(()=>{ ProductsManager.getProducts().then((result)=>{socket.emit("uploadList",result)})}) 
     }
     catch (error) {
-        console.log("Error: ", error.message);
-    } 
-        const io= new Server(httpServer);
-        io.on('connection', socket=>{
-            console.log("Nuevo cliente socket conectando")
-
-        socket.on('addNewProduct', async data =>{
-            console.log("el producto es",data);
-            let {title, description, thumbnail, code, price, stock, category}= data;
-            try {
-            await ProductM.addProduct(title, description,parseInt( price), thumbnail,  code,  parseInt(stock),category)
-            .then(()=>{ ProductM.getProducts().then((result)=>{socket.emit("uploadList",result)})}) 
-            }
-            catch (error) {
-                console.log("cannot create products", error);
-            }
-        })
+        console.log("cannot create products", error);
+    }
 })
-}
 
-enviroment();
+})

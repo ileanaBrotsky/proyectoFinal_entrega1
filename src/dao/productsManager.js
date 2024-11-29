@@ -75,7 +75,7 @@ export default class ProductsManager {
       return [];
     }
   };
-  getProductById = async (idProd) => {
+  getProductBy = async (idProd) => {
     try {
       const products = await this.getProducts();
       console.log('los productos son',products)

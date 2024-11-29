@@ -28,9 +28,9 @@
                   <td>{{this.price}}</td>
                   <td>{{this.category}}</td>
                   <td>{{this.stock}}</td>
-                  {{!-- <td>  <button type="button" class="btn btn-warning w-100 mb-1"  data-bs-toggle="modal" data-bs-target="#UploadProductModal" id="btn-upload">Modificar</button>
+                   <td>  <button type="button" class="btn btn-warning w-100 mb-1"  data-bs-toggle="modal" data-bs-target="#UploadProductModal" id="btn-upload">Modificar</button>
                         <button type="button" class="btn btn-danger w-100 mb-1" id="btn-delete">Eliminar</button>
-                   </td> --}}
+                   </td>
                </tr>
                   {{/each}}
           </table>
@@ -82,7 +82,7 @@
          </div>
       <div class="row">
          <div class="col mb-3">
-         <button type="submit" class="btn btn-primary">Cargar</button>
+         <button type="submit" class="btn btn-primary" data-bs-dismiss="modal">Cargar</button>
       </div>
    </div>
    </form>
